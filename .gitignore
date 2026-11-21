@@ -1,0 +1,30 @@
+# build
+/build*/
+compile_commands.json
+*.o
+*.a
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+/.venv/
+/venv/
+
+# datasets (re-created by `python -m pdlbench data`)
+/data/*
+!/data/.gitkeep
+
+# experiment outputs (keep curated results under results/published/ if desired)
+/results/*
+!/results/.gitkeep
+!/results/published/
+
+# editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# local Claude Code settings (machine specific)
+.claude/settings.local.json

@@ -1,0 +1,9 @@
+# pdl-bench C / CUDA style
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AlignEscapedNewlines: Left
+PointerAlignment: Right
+SortIncludes: true
