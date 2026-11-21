@@ -1,0 +1,35 @@
+# Weak scaling: fixed per-rank batch (64) and fixed per-rank data (6000 samples), so the
+# total work grows with the number of processes. Ideal: constant time per epoch.
+# Expected runtime: ~15-20 minutes.
+name: weak_scaling
+description: >
+  Synchronous SGD with 64 samples per rank per step and 6000 training samples per rank
+  (MNIST subset growing with p).
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  np: [1, 2, 4, 6, 8, 10]
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: lenet
+  train-data: data/mnist-train.pdlds
+  test-data: data/mnist-test.pdlds
+  train-limit: "=6000*np"
+  epochs: 3
+  batch-size: 64
+  lr: 0.05
+  eval-every: 0
+analysis:
+  group_by: [np]
+  baseline: {np: 1}
+  scaling: weak
+  plots: [weak_scaling, training_time, throughput, phase_breakdown]

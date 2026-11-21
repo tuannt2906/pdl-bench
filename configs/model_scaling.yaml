@@ -1,0 +1,38 @@
+# Model-size scaling: CNN width multiplier 1, 2, 4, 8 (≈ 4x parameters per step) with
+# synchronous SGD on 1, 4, 8 processes. Larger models raise both compute and gradient
+# volume; the comm fraction shows which grows faster.
+# Expected runtime: ~30-40 minutes.
+name: model_scaling
+description: >
+  Synchronous SGD on a CIFAR-10 subset (10k samples, 1 epoch) for CNN widths 1..8 and
+  1/4/8 ranks, one thread per rank.
+binary: pdl_train
+repeats: 2
+timeout: 5400
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: cnn
+  train-data: data/cifar10-train.pdlds
+  test-data: data/cifar10-test.pdlds
+  train-limit: 10000
+  epochs: 1
+  global-batch: 128
+  lr: 0.01
+  eval-every: 0
+matrix:
+  np: [1, 4, 8]
+  width: [1, 2, 4, 8]
+analysis:
+  group_by: [width, np]
+  baseline: {np: 1}
+  match_on: [width]
+  plots: [model_size, speedup, efficiency, phase_breakdown]

@@ -1,0 +1,32 @@
+# MPI communication benchmark: allreduce algorithms (library, ring, recursive doubling,
+# binomial tree, naive central driver, reduce+bcast), ping-pong (alpha-beta fit),
+# broadcast and all-to-all, for 2..10 processes on one node (shared-memory transport).
+# Expected runtime: ~10-15 minutes.
+name: comm_allreduce
+description: >
+  Allreduce algorithms vs message size (4 B .. 64 MiB) and process count; ping-pong latency
+  and bandwidth provide the alpha-beta parameters for `pdlbench perfmodel`.
+binary: pdl_bench_comm
+repeats: 3
+timeout: 1800
+mpi:
+  launcher: mpirun
+  np: [2, 4, 6, 8, 10]
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  algos: all
+  min-bytes: 4
+  max-bytes: 67108864
+  factor: 4
+  reps: 20
+  warmup: 3
+  pingpong: 1
+  bcast: 1
+  alltoall: 1
+  verify: 1
+analysis:
+  group_by: [np]
+  plots: [comm_allreduce, comm_scaling, pingpong, perfmodel]

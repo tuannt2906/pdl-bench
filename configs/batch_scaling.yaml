@@ -1,0 +1,36 @@
+# Batch-size scaling of single-process training on CPU (OpenMP, all cores) and GPU
+# (cuBLAS). Paper §3 conclusion: larger batches give higher (GPU) speedup.
+# Expected runtime: ~15 minutes.
+name: batch_scaling
+description: >
+  Sequential training throughput on CIFAR-10 (cnn, width 2) for batch sizes 16..512,
+  CPU (OpenMP, 12 threads) vs GPU (cuBLAS).
+binary: pdl_train
+repeats: 3
+timeout: 3600
+env:
+  OMP_NUM_THREADS: 12
+  OMP_PROC_BIND: close
+  OMP_PLACES: cores
+base_args:
+  strategy: sequential
+  model: cnn
+  width: 2
+  train-data: data/cifar10-train.pdlds
+  test-data: data/cifar10-test.pdlds
+  train-limit: 20000
+  test-limit: 2000
+  epochs: 1
+  lr: 0.01
+  eval-every: 0
+matrix:
+  batch-size: [16, 32, 64, 128, 256, 512]
+variants:
+  - {device: cpu, impl: omp, threads: 12}
+  - {device: cuda, impl: cublas}
+analysis:
+  group_by: [device, batch_size]
+  baseline: {batch_size: 16}
+  match_on: [device]
+  x: batch_size
+  plots: [batch_size, training_time, phase_breakdown]

@@ -1,0 +1,41 @@
+# Hybrid MPI x OpenMP with a constant budget of 12 hardware threads (the 6 P-cores with
+# Hyper-Threading of the i5-12600K): processes x threads = 1x12, 2x6, 3x4, 4x3, 6x2, 12x1.
+# Answers: is it better to parallelise images inside a process (paper §2, multi-core) or
+# to distribute mini-batches across processes?
+# Expected runtime: ~20 minutes.
+name: hybrid_mpi_omp
+description: >
+  Synchronous SGD on MNIST/LeNet, global batch 256, 12 threads in total split between MPI
+  ranks and OpenMP threads per rank (no core binding so threads can spread).
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, none]
+  allow_oversubscribe: true
+base_args:
+  strategy: sync
+  device: cpu
+  impl: omp
+  model: lenet
+  train-data: data/mnist-train.pdlds
+  test-data: data/mnist-test.pdlds
+  epochs: 2
+  global-batch: 256
+  lr: 0.05
+  eval-every: 0
+  threads: "=12 // np"
+  env.OMP_NUM_THREADS: "=12 // np"
+variants:
+  - {np: 1}
+  - {np: 2}
+  - {np: 3}
+  - {np: 4}
+  - {np: 6}
+  - {np: 12}
+analysis:
+  group_by: [np, threads]
+  baseline: {np: 1}
+  x: np
+  plots: [training_time, throughput, phase_breakdown]

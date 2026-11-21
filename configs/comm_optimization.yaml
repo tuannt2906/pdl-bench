@@ -1,0 +1,44 @@
+# Communication optimizations inside training: allreduce algorithm, gradient fusion
+# (one flat buffer vs one message per layer) and overlap of per-layer non-blocking
+# allreduce with backward propagation. Model chosen to be communication heavy.
+# Expected runtime: ~30-40 minutes.
+name: comm_optimization
+description: >
+  Synchronous SGD on CIFAR-10 (cnn width 4, 10k samples, 1 epoch) at 4 and 8 ranks with
+  every allreduce algorithm x {flat, layer} fusion, plus overlap with MPI_Iallreduce.
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: cnn
+  width: 4
+  train-data: data/cifar10-train.pdlds
+  test-data: data/cifar10-test.pdlds
+  train-limit: 10000
+  epochs: 1
+  global-batch: 128
+  lr: 0.01
+  eval-every: 0
+matrix:
+  np: [4, 8]
+  allreduce: [mpi, ring, rd, tree, naive, reduce_bcast]
+  fusion: [flat, layer]
+variants:
+  - {overlap: 0}
+  - {overlap: 1, allreduce: mpi, fusion: layer}
+analysis:
+  group_by: [np, allreduce, fusion, overlap]
+  baseline: {allreduce: mpi, fusion: flat, overlap: 0}
+  match_on: [np]
+  x: np
+  plots: [phase_breakdown, training_time]

@@ -1,0 +1,40 @@
+# Reproduces paper §3 (Hegde & Usmani): CPU vs GPU time of
+#   (a) the first convolution layer (224x224 grey image, 96 filters 11x11, stride 4)
+#       as a function of batch size  -> paper Fig. 1 and Fig. 2
+#   (b) a fully connected layer as a function of matrix size (batch 1 = matrix-vector)
+#       -> paper Fig. 3 and Fig. 4
+# Expected runtime: ~15-25 minutes (dominated by CPU convolution at large batches).
+name: compute_paper_cpu_gpu
+description: >
+  CPU vs GPU forward time of the paper's convolution layer (batch sweep) and of a fully
+  connected layer (matrix-size sweep). GPU timings with and without host<->device copies.
+binary: pdl_bench_compute
+repeats: 3
+timeout: 3600
+env:
+  OMP_NUM_THREADS: 12
+  OMP_PROC_BIND: close
+  OMP_PLACES: cores
+
+base_args:
+  reps: 5
+  warmup: 2
+  verify: 1
+
+variants:
+  - {op: conv, conv: "1:224:224:96:11:4:0", batches: "1,2,4,8,16,32,64,128,256",
+     impls: "cpu-direct,cpu-blocked,cpu-omp", include-transfer: 0}
+  - {op: conv, conv: "1:224:224:96:11:4:0", batches: "1,2,4,8,16,32,64,128,256",
+     impls: "cuda-direct,cuda-tiled,cublas", include-transfer: 0}
+  - {op: conv, conv: "1:224:224:96:11:4:0", batches: "1,2,4,8,16,32,64,128,256",
+     impls: "cuda-tiled,cublas", include-transfer: 1}
+  - {op: fc, sizes: "256,512,1024,2048,4096", batches: "1",
+     impls: "cpu-blocked,cpu-omp", include-transfer: 0}
+  - {op: fc, sizes: "256,512,1024,2048,4096", batches: "1",
+     impls: "cuda-tiled,cublas", include-transfer: 0}
+  - {op: fc, sizes: "256,512,1024,2048,4096", batches: "1",
+     impls: "cuda-tiled,cublas", include-transfer: 1}
+
+analysis:
+  group_by: [op, impl, include_transfer]
+  plots: [compute_cpu_gpu]

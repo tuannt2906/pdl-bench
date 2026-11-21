@@ -1,0 +1,28 @@
+# Correctness suite (paper-independent): gradient checks, CPU/GPU kernel agreement,
+# determinism, allreduce correctness, sequential vs distributed equivalence and
+# replica synchronization. Expected runtime: < 5 minutes.
+# Without a GPU run:  python -m pdlbench run configs/correctness.yaml --filter device=cpu
+name: correctness
+description: >
+  Correctness checks for every component. CUDA variants compare GPU kernels with the CPU
+  reference. MPI tests run with 2 and 4 ranks.
+binary: pdl_check
+repeats: 1
+timeout: 900
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, none]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 2
+
+variants:
+  - {np: 1, device: cpu, tests: "gradcheck,kernels,determinism,finite"}
+  - {np: 1, device: both, tests: "gradcheck,kernels,determinism,finite"}
+  - {np: 2, device: cpu, tests: "allreduce,equivalence,sync"}
+  - {np: 4, device: cpu, tests: "allreduce,equivalence,sync"}
+  - {np: 2, device: cuda, tests: "equivalence,sync"}
+
+analysis:
+  group_by: [np, device, tests]
+  plots: []

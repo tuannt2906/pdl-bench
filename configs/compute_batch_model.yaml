@@ -1,0 +1,28 @@
+# Full training-step throughput (forward + backward + update) vs batch size and model
+# width on CPU (OpenMP) and GPU (cuBLAS): batch-size and model-size sensitivity of computation.
+# Expected runtime: ~20 minutes.
+name: compute_batch_model
+description: >
+  Training-step throughput of the CIFAR-style CNN for batch sizes 1..512 and width
+  multipliers 1, 2, 4, 8 on CPU (OpenMP) and GPU (cuBLAS).
+binary: pdl_bench_compute
+repeats: 3
+timeout: 3600
+env:
+  OMP_NUM_THREADS: 12
+  OMP_PROC_BIND: close
+  OMP_PLACES: cores
+base_args:
+  op: train-step
+  model: cnn
+  input: "3:32:32"
+  classes: 10
+  batches: "1,4,16,32,64,128,256,512"
+  reps: 5
+  warmup: 2
+matrix:
+  width: [1, 2, 4, 8]
+  impls: [cpu-omp, cublas]
+analysis:
+  group_by: [op, impl, width]
+  plots: [batch_size]

@@ -1,0 +1,48 @@
+# Distributed optimization methods of paper §5: synchronous SGD, Parallel SGD
+# (Zinkevich; per-epoch / periodic averaging, with and without ShuffleSGD), consensus
+# ADMM and asynchronous Downpour SGD, on IID and label-sorted (non-IID) shards.
+# Compares time, throughput and convergence (test accuracy per epoch / per second).
+# Expected runtime: ~1.5-2.5 hours (2 repeats).
+name: strategies_convergence
+description: >
+  MNIST/LeNet, 10 epochs, 4 and 8 ranks (1 thread each), local batch 32; every strategy on
+  IID and label-sorted partitions, evaluated after each epoch.
+binary: pdl_train
+repeats: 2
+timeout: 7200
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: lenet
+  train-data: data/mnist-train.pdlds
+  test-data: data/mnist-test.pdlds
+  epochs: 10
+  batch-size: 32
+  lr: 0.02
+  momentum: 0.9
+  eval-every: 1
+matrix:
+  np: [4, 8]
+  partition: [iid, sorted]
+variants:
+  - {strategy: sequential, np: 1, partition: global, batch-size: 128}
+  - {strategy: sync, partition: global}
+  - {strategy: psgd, avg-period: 0, reshuffle: 0}
+  - {strategy: psgd, avg-period: 10, reshuffle: 0}
+  - {strategy: psgd, avg-period: 0, reshuffle: 1}
+  - {strategy: admm, admm-rho: 0.05, admm-local-steps: 20}
+  - {strategy: downpour, push-every: 1, fetch-every: 1}
+  - {strategy: downpour, push-every: 4, fetch-every: 4}
+analysis:
+  group_by: [strategy, np, partition, avg_period, reshuffle, push_every]
+  baseline: {strategy: sequential}
+  match_on: []
+  x: np
+  plots: [convergence, training_time, throughput, phase_breakdown]

@@ -1,0 +1,37 @@
+# The paper's network setting: 224x224 grey images, 40 classes, first layer 96 filters
+# 11x11 stride 4 (synthetic data with the same geometry). Single-process training
+# throughput on CPU (OpenMP) vs GPU across batch sizes.
+# Expected runtime: ~20-30 minutes (CPU dominates; steps capped by max-steps).
+# Note: batch 256 needs ~3.5 GB of GPU memory (im2col buffers dominate) — fits the 6 GB RTX 2060
+# for a single process; lower the batch list if it reports cudaMalloc failures.
+name: paper_conv_model
+description: >
+  Sequential training of the `paper` model on synthetic 1x224x224 images (40 classes),
+  30 steps per batch size, CPU (OpenMP, 12 threads) vs GPU (cuBLAS).
+binary: pdl_train
+repeats: 2
+timeout: 5400
+env:
+  OMP_NUM_THREADS: 12
+  OMP_PROC_BIND: close
+  OMP_PLACES: cores
+base_args:
+  strategy: sequential
+  model: paper
+  train-data: "synthetic:20000:1:224:224:40"
+  test-data: "synthetic:1000:1:224:224:40"
+  epochs: 1
+  max-steps: 30
+  lr: 0.01
+  eval-every: 0
+matrix:
+  batch-size: [32, 64, 128, 256]
+variants:
+  - {device: cpu, impl: omp, threads: 12}
+  - {device: cuda, impl: cublas}
+analysis:
+  group_by: [device, batch_size]
+  baseline: {batch_size: 32}
+  match_on: [device]
+  x: batch_size
+  plots: [batch_size, training_time, phase_breakdown]

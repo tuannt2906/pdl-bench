@@ -1,0 +1,43 @@
+# GPU + MPI on a single RTX 2060: 1, 2, 4 ranks sharing one GPU (each with its own CUDA
+# context, gradients staged through host memory) vs CPU-only ranks.
+# Shows the paper's §2 "all cores share the GPU" setting and its limits.
+# Expected runtime: ~20 minutes.
+name: gpu_mpi
+description: >
+  Synchronous SGD on CIFAR-10 (cnn width 4, 20k samples, 1 epoch, global batch 256):
+  CUDA ranks sharing one GPU (np 1, 2, 4) vs CPU ranks (np 1, 4, 8).
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  model: cnn
+  width: 4
+  train-data: data/cifar10-train.pdlds
+  test-data: data/cifar10-test.pdlds
+  train-limit: 20000
+  test-limit: 2000
+  epochs: 1
+  global-batch: 256
+  lr: 0.01
+  timing-sync: 1
+  eval-every: 0
+matrix:
+  np: [1, 2, 4, 8]
+variants:
+  - {device: cuda, impl: cublas}
+  - {device: cpu, impl: blocked, threads: 1}
+exclude:
+  - {device: cuda, np: 8}
+  - {device: cpu, np: 2}
+analysis:
+  group_by: [device, np]
+  baseline: {np: 1}
+  match_on: [device]
+  plots: [training_time, speedup, throughput, phase_breakdown]

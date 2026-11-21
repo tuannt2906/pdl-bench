@@ -1,0 +1,41 @@
+# Smoke test: every binary and every strategy for a few steps on synthetic data.
+# Expected runtime: 1-3 minutes on the i5-12600K (CPU only, no dataset download needed).
+name: smoke
+description: >
+  Quick end-to-end sanity check of all binaries and training strategies on a small
+  synthetic dataset. Use it right after building to validate the toolchain.
+repeats: 1
+timeout: 600
+mpi:
+  launcher: mpirun
+  extra_args: [--bind-to, none]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+
+x_train: &train  # YAML anchor reused by the variants below (unknown top-level keys are ignored)
+  binary: pdl_train
+  device: cpu
+  train-data: "synthetic:2000:1:28:28:10"
+  test-data: "synthetic:500:1:28:28:10"
+  model: lenet
+  epochs: 1
+  batch-size: 32
+  max-steps: 20
+  threads: 1
+
+variants:
+  - {binary: pdl_check, np: 1, tests: "gradcheck,kernels,determinism,finite"}
+  - {binary: pdl_check, np: 2, tests: "allreduce,equivalence,sync"}
+  - {binary: pdl_bench_compute, np: 1, op: "gemm,fc,conv", sizes: "64,128", batches: "1,4", reps: 2, warmup: 1,
+     impls: "cpu-naive,cpu-blocked,cpu-omp,cpu-direct", conv: "1:64:64:16:5:2:0"}
+  - {binary: pdl_bench_comm, np: 2, max-bytes: 1048576, reps: 3, warmup: 1}
+  - {<<: *train, np: 1, strategy: sequential}
+  - {<<: *train, np: 2, strategy: sync, check-sync: 5}
+  - {<<: *train, np: 2, strategy: psgd, avg-period: 5, reshuffle: 1}
+  - {<<: *train, np: 2, strategy: admm, admm-local-steps: 5}
+  - {<<: *train, np: 3, strategy: downpour, push-every: 2, fetch-every: 2}
+
+analysis:
+  group_by: [binary, strategy, np]
+  plots: []

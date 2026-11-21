@@ -1,0 +1,36 @@
+# Strong scaling of synchronous data-parallel SGD on CPU: fixed global batch (256) and
+# fixed dataset (MNIST), increasing number of MPI processes, one thread per process.
+# Expected runtime: ~20-30 minutes (3 repeats).
+name: strong_scaling
+description: >
+  Synchronous SGD (allreduce of gradients) on MNIST/LeNet with a fixed global batch of 256;
+  1..10 MPI ranks pinned to cores, 1 OpenMP thread each.
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  np: [1, 2, 4, 6, 8, 10]
+  extra_args: [--bind-to, core, --map-by, core]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: lenet
+  train-data: data/mnist-train.pdlds
+  test-data: data/mnist-test.pdlds
+  epochs: 3
+  global-batch: 256
+  lr: 0.05
+  momentum: 0.9
+  allreduce: mpi
+  eval-every: 0
+analysis:
+  group_by: [np]
+  baseline: {np: 1}
+  scaling: strong
+  plots: [strong_scaling, training_time, speedup, efficiency, throughput, phase_breakdown, perfmodel]
