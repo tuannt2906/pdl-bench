@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite it as below."
+title: "pdl-bench: Parallel & Distributed Deep Learning Benchmark"
+version: 1.0.0
+date-released: 2026-11-21
+license: MIT
+authors:
+  - family-names: Nguyen
+    given-names: Tuan
+repository-code: "https://github.com/tuannt2906/pdl-bench"
+references:
+  - type: report
+    title: "Parallel and Distributed Deep Learning"
+    authors:
+      - family-names: Hegde
+        given-names: Vishakh
+      - family-names: Usmani
+        given-names: Sheema
+    institution:
+      name: "Stanford University"
