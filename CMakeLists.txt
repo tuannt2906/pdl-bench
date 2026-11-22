@@ -157,6 +157,20 @@ foreach(app pdl_train pdl_bench_compute pdl_bench_comm pdl_check)
 endforeach()
 
 # ---------------------------------------------------------------------------
+# Sequential version: plain C, built from the shared CNN core only
+# (no MPI, no OpenMP, no CUDA). Also buildable alone with sequential/Makefile.
+# ---------------------------------------------------------------------------
+add_executable(seq_train
+  sequential/seq_train.c
+  src/core/common.c src/core/timer.c src/core/rng.c src/core/json.c src/core/cli.c
+  src/backend/backend.c src/backend/cpu_kernels.c
+  src/nn/model.c src/data/dataset.c)
+target_include_directories(seq_train PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/backend)
+target_compile_options(seq_train PRIVATE ${PDL_C_FLAGS})
+target_compile_definitions(seq_train PRIVATE PDL_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
+target_link_libraries(seq_train PRIVATE m)
+
+# ---------------------------------------------------------------------------
 # Tests (CTest) — correctness suite + tiny end-to-end runs on synthetic data
 # ---------------------------------------------------------------------------
 if(PDL_BUILD_TESTS)

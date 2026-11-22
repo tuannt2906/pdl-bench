@@ -35,6 +35,10 @@ pdl_mpi_test(check_mpi_4 4 ${_bin}/pdl_check --tests allreduce,equivalence,sync 
 # --- end-to-end training on synthetic data ------------------------------------
 set(_tiny --train-data synthetic:1024:1:16:16:4 --test-data synthetic:256:1:16:16:4
           --model conv:4:3:1:1,relu,pool:2:2,fc:16,relu,fc:4 --epochs 2 --batch-size 16 --lr 0.02 --verbose 0)
+set(_tiny_seq --train-data synthetic:1024:1:16:16:4 --test-data synthetic:256:1:16:16:4
+              --model conv:4:3:1:1,relu,pool:2:2,fc:16,relu,fc:4 --epochs 2 --batch-size 16 --lr 0.02)
+add_test(NAME seq_train_pure_c COMMAND ${_bin}/seq_train ${_tiny_seq})
+set_tests_properties(seq_train_pure_c PROPERTIES LABELS "quick" TIMEOUT 120)
 add_test(NAME train_sequential COMMAND ${_bin}/pdl_train --strategy sequential ${_tiny})
 set_tests_properties(train_sequential PROPERTIES LABELS "quick" TIMEOUT 120)
 pdl_mpi_test(train_sync_ring 3 ${_bin}/pdl_train --strategy sync --allreduce ring --check-sync 5 ${_tiny})
