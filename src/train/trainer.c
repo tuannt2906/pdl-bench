@@ -91,7 +91,7 @@ void pdl_trainer_init(pdl_trainer *t, pdl_train_config *cfg, int argc, char **ar
     /* data */
     pdl_dataset *full = pdl_dataset_load(cfg->train_data, cfg->train_limit, (uint64_t)cfg->seed);
     if (strcmp(cfg->test_data, "none") != 0 && cfg->test_data[0]) {
-        pdl_dataset *tfull = pdl_dataset_load(cfg->test_data, cfg->test_limit, (uint64_t)cfg->seed + 7919);
+        pdl_dataset *tfull = pdl_dataset_load_split(cfg->test_data, cfg->test_limit, (uint64_t)cfg->seed, 1);
         PDL_CHECK(tfull->c == full->c && tfull->h == full->h && tfull->w == full->w &&
                       tfull->num_classes == full->num_classes,
                   "train/test datasets have different shapes");

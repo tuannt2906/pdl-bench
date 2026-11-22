@@ -111,13 +111,14 @@ static void build_protos(pdl_dataset *d) {
     }
 }
 
-static uint8_t synth_label(uint64_t seed, uint32_t i, int k) {
-    return (uint8_t)(pdl_hash64(seed ^ (0xC1A55ULL + (uint64_t)i * 0x9E3779B97F4A7C15ULL)) % (uint64_t)k);
+static uint8_t synth_label(uint64_t seed, uint64_t split, uint32_t i, int k) {
+    uint64_t key = (split << 32) | i;
+    return (uint8_t)(pdl_hash64(seed ^ (0xC1A55ULL + key * 0x9E3779B97F4A7C15ULL)) % (uint64_t)k);
 }
 
 static void synth_sample(const pdl_dataset *d, uint32_t i, uint8_t label, uint8_t *out) {
     pdl_rng r;
-    pdl_rng_seed(&r, d->seed, 0x5A3F1EULL, (uint64_t)i, 0);
+    pdl_rng_seed(&r, d->seed, 0x5A3F1EULL, (uint64_t)i, d->split);
     const float *p = d->protos + (size_t)label * d->sample_bytes;
     float contrast = 50.0f + 40.0f * (float)pdl_rng_uniform(&r);
     float shift = 128.0f + pdl_rng_uniformf(&r, -20.0f, 20.0f);
@@ -133,7 +134,7 @@ static void synth_sample(const pdl_dataset *d, uint32_t i, uint8_t label, uint8_
     }
 }
 
-static pdl_dataset *load_synthetic(const char *desc, int limit, uint64_t seed) {
+static pdl_dataset *load_synthetic(const char *desc, int limit, uint64_t seed, int split) {
     char *f[8];
     int nf = pdl_str_split(desc, ':', f, 8);
     PDL_CHECK(nf == 6, "synthetic descriptor must be synthetic:N:C:H:W:K (got '%s')", desc);
@@ -150,16 +151,21 @@ static pdl_dataset *load_synthetic(const char *desc, int limit, uint64_t seed) {
     d->sample_bytes = (size_t)c * h * w;
     d->synthetic = 1;
     d->seed = seed;
+    d->split = (uint64_t)split;
     d->labels = (uint8_t *)pdl_xmalloc((size_t)n);
-    for (int i = 0; i < n; ++i) d->labels[i] = synth_label(seed, (uint32_t)i, k);
+    for (int i = 0; i < n; ++i) d->labels[i] = synth_label(seed, d->split, (uint32_t)i, k);
     build_protos(d);
     snprintf(d->source, sizeof(d->source), "%s", desc);
     return d;
 }
 
-pdl_dataset *pdl_dataset_load(const char *path_or_desc, int limit, uint64_t seed) {
-    if (pdl_str_starts_with(path_or_desc, "synthetic:")) return load_synthetic(path_or_desc, limit, seed);
+pdl_dataset *pdl_dataset_load_split(const char *path_or_desc, int limit, uint64_t seed, int split) {
+    if (pdl_str_starts_with(path_or_desc, "synthetic:")) return load_synthetic(path_or_desc, limit, seed, split);
     return load_file(path_or_desc, limit);
+}
+
+pdl_dataset *pdl_dataset_load(const char *path_or_desc, int limit, uint64_t seed) {
+    return pdl_dataset_load_split(path_or_desc, limit, seed, 0);
 }
 
 /* Pointer to the bytes of sample i; synthetic samples are generated into tmp. */

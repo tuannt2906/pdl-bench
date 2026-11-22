@@ -34,6 +34,7 @@ typedef struct {
     /* synthetic generator state (pixels are produced on demand from (seed, index)) */
     int synthetic;
     uint64_t seed;
+    uint64_t split;      /* 0 = train, 1 = test: same classes, disjoint sample keys */
     float *protos;       /* [num_classes][c*h*w] class prototypes in [-1, 1] */
 } pdl_dataset;
 
@@ -41,6 +42,10 @@ typedef struct {
  * first `limit` samples. Synthetic datasets only get labels here; pixels are
  * produced by pdl_dataset_subset / pdl_dataset_gather. */
 pdl_dataset *pdl_dataset_load(const char *path_or_desc, int limit, uint64_t seed);
+/* Same as pdl_dataset_load, for a given split of a synthetic dataset: every split
+ * shares the class prototypes of `seed` but draws different samples, so a
+ * synthetic test set measures generalization on the same task. Files ignore `split`. */
+pdl_dataset *pdl_dataset_load_split(const char *path_or_desc, int limit, uint64_t seed, int split);
 /* Creates an empty dataset with the same geometry. */
 pdl_dataset *pdl_dataset_alloc(int n, int c, int h, int w, int num_classes);
 /* Returns a new, fully materialized dataset with the samples listed in idx
