@@ -91,8 +91,17 @@ static int cmp_double(const void *a, const void *b) {
 
 typedef void (*bench_fn)(void *arg);
 
+/* GPUs idle at a low clock and need a few hundred ms of sustained load to boost; a fixed
+ * number of warm-up repetitions of a sub-millisecond kernel is far too short, so GPU timings
+ * were up to 10x too slow at small sizes. Warm up for a minimum wall time on CUDA. */
+#define GPU_WARMUP_SECONDS 0.5
+
 static stats time_it(const pdl_ctx *ctx, bench_fn fn, void *arg, int warmup, int reps) {
-    for (int i = 0; i < warmup; ++i) fn(arg);
+    const double w0 = pdl_now();
+    for (int i = 0; i < warmup || (ctx->device == PDL_DEV_CUDA && pdl_now() - w0 < GPU_WARMUP_SECONDS); ++i) {
+        fn(arg);
+        if (ctx->device == PDL_DEV_CUDA) pdl_ctx_sync(ctx);
+    }
     pdl_ctx_sync(ctx);
     double *t = (double *)pdl_xmalloc((size_t)reps * sizeof(double));
     for (int i = 0; i < reps; ++i) {

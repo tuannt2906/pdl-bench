@@ -115,9 +115,10 @@ void pdl_ctx_init(pdl_ctx *ctx, pdl_device dev, pdl_impl impl, int num_threads, 
                   pdl_impl_name(impl));
         if (impl == PDL_IMPL_CPU_OMP && !pdl_has_openmp())
             PDL_WARN("built without OpenMP: cpu-omp runs single-threaded");
-#ifdef _OPENMP
-        if (num_threads > 0) omp_set_num_threads(num_threads);
-#endif
+        /* The thread count lives in ctx->num_threads and every OpenMP region carries
+         * num_threads(nt). Do NOT call omp_set_num_threads() here: it is process-global, so a
+         * 1-thread reference context (used by --verify) would silently make every later
+         * cpu-omp context in the same process run single-threaded. */
     }
 }
 
