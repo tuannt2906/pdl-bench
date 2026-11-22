@@ -55,6 +55,7 @@ Expected `ctest` result: all tests pass. `check_cuda` appears only in CUDA build
 | nvcc: `unsupported GNU version` | `scripts/build.sh -- -DCMAKE_CUDA_HOST_COMPILER=g++-12` (install an older g++) |
 | CMake can't find CUDA | `export PATH=/usr/local/cuda/bin:$PATH` or `-DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc` |
 | `no CUDA device found` on WSL2 | update the Windows driver; check `ls /usr/lib/wsl/lib/libcuda.so*` and `nvidia-smi` |
+| `nvidia-smi` sees the GPU but `pdl_check` says `CUDA requested but not available` (WSL2) | apt's `nvidia-cuda-toolkit` installed a `libcuda.so` in `/lib/x86_64-linux-gnu` that shadows the WSL driver library: `export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH` (add it to `~/.bashrc`). `pdlbench` runs a preflight and stops with this hint |
 | `cudaMalloc(...) failed` | reduce `--batch-size`, `--width` or the number of ranks sharing the GPU |
 | Very slow multi-rank runs | `OMP_NUM_THREADS` × ranks > cores. Set `OMP_NUM_THREADS=1` or use `hybrid_mpi_omp.yaml` |
 | OpenMPI TCP warnings on WSL2 | `export OMPI_MCA_btl_tcp_if_include=lo` or `export OMPI_MCA_btl=self,vader` |

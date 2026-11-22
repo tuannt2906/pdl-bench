@@ -5,7 +5,7 @@ This document is the protocol for research objective 7 of the project specificat
 build a correct, efficient MPI/CUDA deep-learning benchmark?*
 
 **This repository is itself the AI-generated subject.** It was produced by Claude Code
-from the paper (`docs/reference/Deep Learning - Parallel and Distributed.pdf`) and the
+from the paper (https://hgpu.org/?p=16046) and the
 specification, then built and validated on the target machine. Every human change made
 afterwards must be logged (see [effort log](#4-human-effort-log)) so that the effort needed
 to reach a working implementation can be measured.

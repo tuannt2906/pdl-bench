@@ -2,8 +2,8 @@
 
 A from-scratch C / MPI / OpenMP / CUDA implementation of CNN training, built to **measure,
 analyse and compare** parallel and distributed training methods. It reproduces and extends
-*Hegde & Usmani, "Parallel and Distributed Deep Learning"* (Stanford,
-[`docs/reference/`](docs/reference/)): the CPU-vs-GPU convolution study (§3) and the
+*Hegde & Usmani, "Parallel and Distributed Deep Learning"* (Stanford, 2016,
+[https://hgpu.org/?p=16046](https://hgpu.org/?p=16046)): the CPU-vs-GPU convolution study (§3) and the
 distributed optimizers **Synchronous SGD, Parallel SGD, ADMM and Downpour SGD** (§5),
 plus their communication / computation cost models.
 
@@ -52,7 +52,8 @@ plus their communication / computation cost models.
 │   ├── data/dataset.c        # loader, synthetic generator, sharding
 │   ├── comm/comm.c           # ring / recursive-doubling / tree / naive allreduce
 │   └── train/                # trainer.c, config.c, strategy_{sync,psgd,admm,downpour}.c
-├── apps/                     # pdl_train, pdl_bench_compute, pdl_bench_comm, pdl_check
+├── apps/                     # parallel programs: pdl_train, pdl_bench_compute, pdl_bench_comm, pdl_check
+├── sequential/               # sequential version: seq_train.c + Makefile (plain C)
 ├── tests/CMakeLists.txt      # CTest: correctness suite + end-to-end runs of every strategy
 ├── configs/                  # experiment suite (YAML)
 ├── pytools/pdlbench/         # Python: data, run, aggregate, plot, perfmodel, report, ai-eval
@@ -94,6 +95,17 @@ pip install -r requirements.txt && pip install -e .     # provides the `pdlbench
 scripts/build.sh                   # CMake Release build, CUDA auto-detected (sm_75)
 ctest --test-dir build --output-on-failure              # correctness + end-to-end tests
 pdlbench data --dataset mnist cifar10                   # -> data/*.pdlds
+```
+
+### Sequential version (plain C, no MPI / OpenMP / CUDA)
+
+`sequential/seq_train.c` trains the CNN in a single thread using only the shared core
+(`src/core`, `src/nn`, `src/data`, CPU kernels). It follows the same sample order and
+initialization as `pdl_train --strategy sequential`, and both print identical losses.
+
+```bash
+cd sequential && make            # gcc only; or use build/bin/seq_train from the CMake build
+./seq_train --epochs 2 --output seq.json
 ```
 
 ### Run the programs directly
@@ -223,5 +235,5 @@ V. Hegde, S. Usmani, *Parallel and Distributed Deep Learning*, Stanford Universi
 
 ## License
 
-[MIT](LICENSE). The reference paper in `docs/reference/` belongs to its authors and is
-included for research reference only.
+[MIT](LICENSE). The reference paper is not redistributed here (copyright of its authors);
+see the link above.

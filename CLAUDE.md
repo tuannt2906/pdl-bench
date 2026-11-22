@@ -4,7 +4,7 @@
 **pdl-bench**: a research benchmark for parallel & distributed CNN training, written from
 scratch in C11 + MPI + OpenMP + CUDA, with Python tooling for experiments and analysis.
 It reproduces and extends Hegde & Usmani, *Parallel and Distributed Deep Learning*
-(`docs/reference/*.pdf`) following the team's spec (`docs/reference/overview.md`;
+(https://hgpu.org/?p=16046, not stored in the repo) following the team's spec (`docs/reference/overview.md`;
 decisions about it are in `docs/SPEC_REVIEW.md`).
 
 * **Owner / language**: the user writes in Vietnamese, so answer in Vietnamese. Code,
@@ -17,14 +17,28 @@ decisions about it are in `docs/SPEC_REVIEW.md`).
   (`docs/AI_AGENT_EVALUATION.md`). Human or agent fixes made after the initial version should be
   recorded in its effort log (§4).
 
+## Where this lives (team repository)
+This project is the `tuannn/` contribution to the team repo
+`ngocvinhvu/High-Performance-Computing` (Group 10). Path: `tuannn/code/` (this project),
+`tuannn/sequential` → `code/sequential/`, `tuannn/experiments/` (PLAN.md with predictions written
+before running, configs, raw results and SUMMARY files), `tuannn/report/`, `tuannn/slides/`.
+Team rules: only change files inside `tuannn/`. The root README is changed only through a Pull
+Request. Work on a branch `tuannn/<task>`, `git pull --rebase origin main` before pushing,
+never force-push. No credentials, no files > 100 MB, no copyrighted PDFs (link the paper instead),
+no generated files. One commit = one change. The user has no push access to the team repo, so push
+to the fork `tuannt2906/High-Performance-Computing` and open a PR into `main`.
+Commits must be authored by the user (Tuan Nguyen, GitHub `tuannt2906`, noreply email). Never
+add AI co-author trailers.
+
 ## Status (see docs/ROADMAP.md for the full matrix)
-* Verified on the dev machine: CPU + MPI build with 0 warnings, `ctest` 11/11, gradcheck ~1e-4,
+* Verified on the dev machine (round 1): CPU + MPI build with 0 warnings, `ctest` 11/11, gradcheck ~1e-4,
   MNIST LeNet 98.5%, all 5 strategies converge with 4 ranks, Python pipeline end-to-end.
-* **Not yet executed**: the CUDA backend (compile-checked with clang for sm_75 only) and the
-  OpenMP pragmas (Apple Clang has no OpenMP). **The first job on the target machine is the
-  checklist in docs/ROADMAP.md.** Build with CUDA, run `ctest`, run `pdl_check --device both`,
-  and fix whatever fails before any measurement.
-* Next milestones: M6 measurement campaign (`scripts/run_all.sh`), M7 research report, M8 AI eval.
+* Verified on the target (round 2, i5-12600K + RTX 2060, WSL2, 2026-11-23): CUDA backend and OpenMP kernels,
+  `ctest` 13/13, `pdl_check` 35 (CUDA) / 67 (MPI). Measurement campaign done: `experiments/results/dot2_*`
+  and `SUMMARY_dot2.md`. Lessons: compare results with a standalone run and with the hardware peak (two
+  measurement bugs were found that way, see `docs/ai_effort_log.csv`); under WSL2 export
+  `LD_LIBRARY_PATH=/usr/lib/wsl/lib`, and note that P/E-core pinning is not possible there.
+* Next milestones: M7 research report (`report/BAO_CAO.md` now includes round 2), M8 AI eval.
 
 ## Commands
 ```bash

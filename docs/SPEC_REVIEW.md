@@ -1,7 +1,7 @@
 # Đánh giá đặc tả `overview.md` và cách triển khai
 
 Tài liệu này đối chiếu từng mục của đặc tả gốc ([`reference/overview.md`](reference/overview.md))
-với bài báo định hướng ([`reference/Deep Learning - Parallel and Distributed.pdf`](reference/))
+với bài báo định hướng ([Hegde & Usmani, Stanford 2016](https://hgpu.org/?p=16046); bài báo không được đưa vào repo vì bản quyền)
 và ghi lại quyết định: **giữ nguyên**, **điều chỉnh**, hay **bỏ qua / rút gọn**. Lý do được
 nêu rõ để nhóm có thể xem lại khi viết báo cáo.
 
