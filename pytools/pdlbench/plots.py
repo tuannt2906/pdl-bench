@@ -90,6 +90,9 @@ def _lines(ax: plt.Axes, df: pd.DataFrame, x: str, y: str, hue: Sequence[str], e
         if yv.notna().sum() == 0:
             continue
         label = _label(g.iloc[0], hue)
+        if err and err.endswith("_ci95") and "n_runs" in g.columns and _num(g["n_runs"]).min() < 3:
+            # a t-based 95% CI from 2 runs (t = 12.7) is uninformative: show the std instead
+            err = err[: -len("_ci95")] + "_std"
         if err and err in g.columns and _num(g[err]).notna().any():
             ax.errorbar(g["_x"], yv, yerr=_num(g[err]).fillna(0), marker=marker, capsize=3, label=label)
         else:
@@ -322,17 +325,20 @@ def plot_compute_cpu_gpu(a, out):
             continue
         if op == "fc" and "batch" in d.columns and d["batch"].astype(str).nunique() > 1:
             d = d[_num(d["batch"]) == _num(d["batch"]).min()]
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+        ratio = _gpu_ratio(d, x)
+        if ratio.empty:  # CPU-only run: no GPU speedup panel
+            fig, ax1 = plt.subplots(figsize=(6, 4.2))
+        else:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
         _lines(ax1, d, x, "time_mean_s_mean", ["impl"])
         ax1.set_xscale("log", base=2)
         ax1.set_yscale("log")
         _finish(ax1, f"{op.upper()} forward time (paper Fig. {'1' if op == 'conv' else '3'})", xlabel, "time [s]")
-        ratio = _gpu_ratio(d, x)
         if not ratio.empty:
             _lines(ax2, ratio, x, "ratio", ["impl"])
             ax2.set_xscale("log", base=2)
-        _finish(ax2, f"GPU speedup over best CPU (paper Fig. {'2' if op == 'conv' else '4'})", xlabel,
-                "CPU time / GPU time")
+            _finish(ax2, f"GPU speedup over best CPU (paper Fig. {'2' if op == 'conv' else '4'})", xlabel,
+                    "CPU time / GPU time")
         fig.tight_layout()
         files += save(fig, out, f"compute_{tag}_cpu_gpu")
     return files

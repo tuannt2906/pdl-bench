@@ -269,16 +269,21 @@ def add_speedup(summary: pd.DataFrame, analysis_cfg: Dict[str, Any], raw_config:
         return summary
     exprs = {norm(k) for k, v in {**(raw_config.get("base_args") or {}), **(raw_config.get("matrix") or {})}.items()
              if isinstance(v, str) and v.startswith("=")}
-    match_on = [norm(c) for c in analysis_cfg.get("match_on", [])] or \
-        [c for c in group_cols if c not in baseline and c not in ("np", "num_workers") and c not in exprs
-         and not c.startswith("env.")]
+    if analysis_cfg.get("match_on") is not None:  # an explicit empty list means "match nothing"
+        match_on = [norm(c) for c in analysis_cfg["match_on"]]
+    else:
+        match_on = [c for c in group_cols if c not in baseline and c not in ("np", "num_workers")
+                    and c not in exprs and not c.startswith("env.")]
     match_on = [c for c in match_on if c in summary.columns]
     weak = str(analysis_cfg.get("scaling", "strong")) == "weak"
     sp, eff, tsp, bt = [], [], [], []
     for _, row in summary.iterrows():
         cand = bases
         for c in match_on:
-            cand = cand[cand[c].map(lambda x, v=row[c]: _match(x, v))]
+            if cand.empty:
+                break
+            # .loc with a boolean mask: indexing with an empty object Series would select columns
+            cand = cand.loc[cand[c].map(lambda x, v=row[c]: _match(x, v)).astype(bool)]
         if cand.empty and len(bases) == 1:
             cand = bases
         if cand.empty:
