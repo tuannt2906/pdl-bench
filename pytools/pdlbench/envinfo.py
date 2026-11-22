@@ -132,10 +132,38 @@ def _python_packages() -> Dict[str, str]:
     return pkgs
 
 
+def _windows_host() -> Optional[Dict[str, Any]]:
+    """Facts about the Windows host when running under WSL2 (they decide clocks and core placement).
+
+    Under WSL2 the vCPUs are scheduled by the Windows host onto any logical processor, so the
+    P-core / E-core split of a hybrid CPU is not controllable from inside the VM, and the
+    host power plan and background load directly change the measurements.
+    """
+    ps = shutil.which("powershell.exe")
+    if ps is None:
+        return None
+    script = (
+        "$c=Get-CimInstance Win32_Processor;"
+        "$p=(powercfg /getactivescheme) -replace '.*\\((.*)\\).*','$1';"
+        "$l=(Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2)"
+        ".CounterSamples|Measure-Object CookedValue -Average;"
+        "@{cpu=$c.Name;cores=$c.NumberOfCores;logical=$c.NumberOfLogicalProcessors;"
+        "power_plan=$p;idle_load_percent=[math]::Round($l.Average,1)}|ConvertTo-Json -Compress"
+    )
+    out = _run([ps, "-NoProfile", "-Command", script], timeout=30.0)
+    try:
+        return json.loads(out) if out else None
+    except ValueError:
+        return None
+
+
 def collect(repo: Path = Path("."), launcher: str = "mpirun") -> Dict[str, Any]:
     uname = platform.uname()
     is_wsl = "microsoft" in uname.release.lower()
     return {
+        "windows_host": _windows_host() if is_wsl else None,
+        "pinning_note": ("WSL2: vCPUs are placed by the Windows host; core pinning inside the VM is "
+                         "virtual (P/E cores of the hybrid CPU are indistinguishable)") if is_wsl else None,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "hostname": uname.node,
         "os": f"{uname.system} {uname.release} {uname.machine}",
@@ -155,7 +183,7 @@ def collect(repo: Path = Path("."), launcher: str = "mpirun") -> Dict[str, Any]:
         "git": _git(repo),
         "python": sys.version.split()[0],
         "python_packages": _python_packages(),
-        "omp_env": {k: v for k, v in os.environ.items() if k.startswith(("OMP_", "OMPI_", "CUDA_"))},
+        "omp_env": {k: v for k, v in os.environ.items() if k.startswith(("OMP_", "OMPI_", "CUDA_")) or k == "LD_LIBRARY_PATH"},
     }
 
 
