@@ -1,0 +1,36 @@
+# Control experiment for strong_scaling: identical, but MPI ranks are NOT pinned (--bind-to none).
+# Under WSL2 the Windows host places the vCPUs, so pinning inside the VM is virtual; this run
+# quantifies what the pinned configuration costs. Expected runtime: ~5 minutes.
+name: strong_scaling_unbound
+description: >
+  Synchronous SGD (allreduce of gradients) on MNIST/LeNet with a fixed global batch of 256;
+  1..10 MPI ranks, NOT pinned, 1 OpenMP thread each.
+binary: pdl_train
+repeats: 3
+timeout: 3600
+mpi:
+  launcher: mpirun
+  np: [1, 2, 4, 6, 8, 10]
+  extra_args: [--bind-to, none]
+  allow_oversubscribe: true
+env:
+  OMP_NUM_THREADS: 1
+base_args:
+  strategy: sync
+  device: cpu
+  impl: blocked
+  threads: 1
+  model: lenet
+  train-data: data/mnist-train.pdlds
+  test-data: data/mnist-test.pdlds
+  epochs: 3
+  global-batch: 256
+  lr: 0.05
+  momentum: 0.9
+  allreduce: mpi
+  eval-every: 0
+analysis:
+  group_by: [np]
+  baseline: {np: 1}
+  scaling: strong
+  plots: [strong_scaling, training_time, speedup, efficiency, throughput, phase_breakdown, perfmodel]

@@ -14,7 +14,7 @@ timeout: 3600
 env:
   OMP_NUM_THREADS: 12
   OMP_PROC_BIND: close
-  OMP_PLACES: cores
+  OMP_PLACES: threads
 
 base_args:
   reps: 5
